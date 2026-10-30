@@ -17,7 +17,7 @@ Enable the plugin and reload the WebUI. No API key, paid service, or extra depen
 ## Use
 
 - Enter a folder path and press Enter, or click folders to browse. The up arrow opens the parent.
-- Filter the current folder by name. Folders appear first; file sizes use the standard Files formatter.
+- Filter the current folder by name. Clear the filter with its close button or Escape. Folders appear first; file sizes use the standard Files formatter.
 - Click a file to open it with Agent Zero's existing Editor, Browser, or Desktop action.
 - **Open Files** opens the complete file browser at the current folder for uploads, downloads, and file management.
 - On the movable welcome layout, use the header to select half/full width, drag the panel, or dismiss it. **Show all dismissed** restores it. Reordering and width persist in this browser.

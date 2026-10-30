@@ -21,7 +21,11 @@
             <input aria-label="Welcome files path" x-model="$store.welcomeFiles.pathInput" spellcheck="false" @keydown.escape="$store.welcomeFiles.pathInput = $store.welcomeFiles.path" />
             <button type="submit" class="welcome-panel-icon-button" aria-label="Open folder path" :disabled="$store.welcomeFiles.loading"><x-icon name="arrow_forward"></x-icon></button>
           </form>
-          <label class="wf-search"><x-icon name="search"></x-icon><input type="search" aria-label="Filter welcome files" placeholder="Filter files…" x-model="$store.welcomeFiles.query" /></label>
+          <div class="wf-search">
+            <x-icon name="search"></x-icon>
+            <input type="search" x-ref="fileFilter" aria-label="Filter welcome files" placeholder="Filter files…" x-model="$store.welcomeFiles.query" @keydown.escape.stop="$store.welcomeFiles.query = ''" />
+            <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeFiles.query" aria-label="Clear file filter" @click="$store.welcomeFiles.query = ''; $refs.fileFilter.focus()"><x-icon name="close"></x-icon></button>
+          </div>
           <div class="wf-list" :aria-busy="$store.welcomeFiles.loading" :inert="$store.welcomeFiles.loading" role="list" aria-label="Welcome files">
             <template x-for="file in $store.welcomeFiles.filtered" :key="file.path">
               <div role="listitem"><button type="button" class="wf-row" @click="$store.welcomeFiles.open(file)">
@@ -43,6 +47,8 @@
     .wf-card .welcome-panel-header { margin: 0; }
     .wf-path, .wf-search { display: flex; align-items: center; gap: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background); min-width: 0; padding: 0.2rem 0.45rem; }
     .wf-path input, .wf-search input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.9rem; padding: 0.4rem 0.2rem; outline: none; }
+    .wf-search input::-webkit-search-cancel-button, .wf-search input::-webkit-search-decoration { appearance: none; display: none; }
+    .wf-search button { flex-shrink: 0; }
     .wf-path:focus-within, .wf-search:focus-within { outline: 1px solid var(--color-text-secondary); }
     .wf-search > x-icon { color: var(--color-text-muted); font-size: 1.15rem; }
     .wf-list { height: 16rem; overflow: auto; overscroll-behavior: contain; }
