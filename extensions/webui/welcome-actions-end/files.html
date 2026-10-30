@@ -11,7 +11,7 @@
             <h2>Files</h2>
             <div class="welcome-panel-actions">
               <button type="button" class="welcome-panel-icon-button" aria-label="Refresh welcome files" :disabled="$store.welcomeFiles.loading" @click="$store.welcomeFiles.load()"><x-icon name="refresh"></x-icon></button>
-              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeStore.mountLayout" :aria-label="$store.welcomeFiles.wide ? 'Use half-width files panel' : 'Expand files panel'" @click="$store.welcomeFiles.toggleWidth()"><x-icon :name="$store.welcomeFiles.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="typeof $store.welcomeStore.mountLayout === 'function'" :aria-label="$store.welcomeFiles.wide ? 'Use half-width files panel' : 'Expand files panel'" @click="$store.welcomeFiles.toggleWidth()"><x-icon :name="$store.welcomeFiles.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
               <button type="button" data-welcome-handle></button>
               <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeFiles.canDismiss" aria-label="Dismiss Files" @click="$store.welcomeFiles.dismiss()"><x-icon name="close"></x-icon></button>
             </div>

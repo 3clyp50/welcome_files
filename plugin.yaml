@@ -1,7 +1,7 @@
 name: welcome_files
 title: Welcome Files
 description: Browse folders, filter files, and open them with Agent Zero from a responsive welcome panel.
-version: 1.0.0
+version: 1.0.1
 settings_sections: []
 per_project_config: false
 per_agent_config: false
