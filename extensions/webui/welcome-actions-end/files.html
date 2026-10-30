@@ -1,0 +1,63 @@
+<html>
+<head><script type="module" src="/plugins/welcome_files/webui/files-store.js"></script></head>
+<body>
+  <div x-data>
+    <template x-if="$store.welcomeFiles">
+      <template x-teleport=".welcome-board, .welcome-lower-grid">
+        <section class="wf-card" data-welcome-block="welcome_files.browser" data-welcome-label="Files"
+          :data-welcome-size="$store.welcomeFiles.wide ? 'full' : 'half'"
+          x-show="!$store.welcomeFiles.hidden" x-create="$store.welcomeFiles.mount()" x-destroy="$store.welcomeFiles.cleanup()">
+          <header class="welcome-panel-header">
+            <h2>Files</h2>
+            <div class="welcome-panel-actions">
+              <button type="button" class="welcome-panel-icon-button" aria-label="Refresh welcome files" :disabled="$store.welcomeFiles.loading" @click="$store.welcomeFiles.load()"><x-icon name="refresh"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeStore.mountLayout" :aria-label="$store.welcomeFiles.wide ? 'Use half-width files panel' : 'Expand files panel'" @click="$store.welcomeFiles.toggleWidth()"><x-icon :name="$store.welcomeFiles.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
+              <button type="button" data-welcome-handle></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeFiles.canDismiss" aria-label="Dismiss Files" @click="$store.welcomeFiles.dismiss()"><x-icon name="close"></x-icon></button>
+            </div>
+          </header>
+          <form class="wf-path" @submit.prevent="$store.welcomeFiles.load($store.welcomeFiles.pathInput)">
+            <button type="button" class="welcome-panel-icon-button" aria-label="Parent folder" :disabled="!$store.welcomeFiles.parent || $store.welcomeFiles.loading" @click="$store.welcomeFiles.load($store.welcomeFiles.parent)"><x-icon name="arrow_upward"></x-icon></button>
+            <input aria-label="Welcome files path" x-model="$store.welcomeFiles.pathInput" spellcheck="false" @keydown.escape="$store.welcomeFiles.pathInput = $store.welcomeFiles.path" />
+            <button type="submit" class="welcome-panel-icon-button" aria-label="Open folder path" :disabled="$store.welcomeFiles.loading"><x-icon name="arrow_forward"></x-icon></button>
+          </form>
+          <label class="wf-search"><x-icon name="search"></x-icon><input type="search" aria-label="Filter welcome files" placeholder="Filter files…" x-model="$store.welcomeFiles.query" /></label>
+          <div class="wf-list" :aria-busy="$store.welcomeFiles.loading" :inert="$store.welcomeFiles.loading" role="list" aria-label="Welcome files">
+            <template x-for="file in $store.welcomeFiles.filtered" :key="file.path">
+              <div role="listitem"><button type="button" class="wf-row" @click="$store.welcomeFiles.open(file)">
+                <x-icon :name="file.is_dir ? 'folder' : 'description'"></x-icon>
+                <span class="wf-name" x-text="file.name"></span><span class="wf-size" x-text="$store.welcomeFiles.size(file)"></span>
+              </button></div>
+            </template>
+            <p class="wf-empty" x-show="!$store.welcomeFiles.filtered.length" x-text="$store.welcomeFiles.loading ? 'Loading files…' : ($store.welcomeFiles.query ? 'No matching files.' : 'This folder is empty.')"></p>
+          </div>
+          <footer class="wf-footer"><span role="status" x-text="$store.welcomeFiles.loading ? 'Loading…' : `${$store.welcomeFiles.filtered.length} items`"></span><button type="button" @click="$store.welcomeFiles.openFiles()">Open Files<x-icon name="open_in_new"></x-icon></button></footer>
+        </section>
+      </template>
+    </template>
+  </div>
+  <style>
+    .welcome-lower-grid .wf-card { grid-column: 1 / -1; }
+    .welcome-lower-grid .wf-card [data-welcome-handle] { display: none; }
+    .wf-card { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-panel); padding: 1.35rem; display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+    .wf-card .welcome-panel-header { margin: 0; }
+    .wf-path, .wf-search { display: flex; align-items: center; gap: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background); min-width: 0; padding: 0.2rem 0.45rem; }
+    .wf-path input, .wf-search input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.9rem; padding: 0.4rem 0.2rem; outline: none; }
+    .wf-path:focus-within, .wf-search:focus-within { outline: 1px solid var(--color-text-secondary); }
+    .wf-search > x-icon { color: var(--color-text-muted); font-size: 1.15rem; }
+    .wf-list { height: 16rem; overflow: auto; overscroll-behavior: contain; }
+    .wf-list[aria-busy="true"] { opacity: 0.55; }
+    .wf-row { display: flex; align-items: center; gap: 0.65rem; width: 100%; padding: 0.65rem 0.4rem; border: 0; border-radius: 4px; background: transparent; color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
+    .wf-row:hover, .wf-row:focus-visible { background: var(--color-background-hover); }
+    .wf-row > x-icon { color: var(--color-primary); flex-shrink: 0; font-size: 1.2rem; }
+    .wf-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+    .wf-size, .wf-empty, .wf-footer { color: var(--color-text-muted); font-size: 0.8rem; }
+    .wf-empty { text-align: center; padding: 2rem 0; }
+    .wf-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border-top: 1px solid var(--color-border); padding-top: 0.7rem; }
+    .wf-footer button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0; background: transparent; border: 0; color: var(--color-text); font: inherit; cursor: pointer; }
+    .wf-footer x-icon { font-size: 1rem; }
+    @media (pointer: coarse) { .wf-card .welcome-panel-icon-button { min-width: 36px; min-height: 44px; } .wf-path input, .wf-search input { font-size: 16px; } }
+    @media (max-width: 480px) { .wf-card { padding: 1rem; } }
+  </style>
+</body>
+</html>
