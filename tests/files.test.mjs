@@ -5,8 +5,8 @@ import test from 'node:test';
 
 function setup() {
   const requests = [], errors = [];
-  const source = readFileSync(new URL('../webui/files-store.js', import.meta.url), 'utf8')
-    .replace(/^import .*;\n/gm, '').replace('export const store', 'const store');
+  const source = readFileSync(new URL('../webui/legacy-files.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace('export const legacyFiles', 'const store');
   const store = vm.runInNewContext(`${source}\nstore`, {
     createStore: (_, value) => value,
     fetchApi: () => new Promise(resolve => requests.push(resolve)),
@@ -41,4 +41,55 @@ test('failed navigation retains the folder and filtering keeps folders first', a
   assert.equal(store.path, '/a0');
   assert.equal(store.entries.length, 3);
   assert.equal(errors[0], 'Not found');
+});
+
+test('supported Cores own the browser while the plugin retains only its welcome controls', async () => {
+  const calls = [];
+  const browser = { isLoading: false, browser: { currentPath: '/shared-ui' }, fetchFiles: path => calls.push(['refresh', path]) };
+  const source = readFileSync(new URL('../webui/files-store.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace('export const store', 'const store');
+  const store = vm.runInNewContext(`${source}\nstore`, {
+    createStore: (_, value) => value,
+    core: { createFileBrowserView: (name, options) => { calls.push([name, options.embedded, options.rememberKey]); return browser; }, store: { open: path => calls.push(['open', path]) } },
+    legacyFiles: { canDismiss: true, mount: () => assert.fail('Legacy browser must not mount'), cleanup: () => assert.fail('Legacy browser must not clean up Core') },
+    welcome: { init() {}, dismissSection() {} }, localStorage: { getItem: () => null }, console,
+  });
+  store.mount(); store.cleanup(); await store.refresh(); await store.openFiles();
+  assert.equal(store.embedded, true);
+  assert.deepEqual(calls, [['welcomeFilesBrowser', true, 'welcomeFiles.path'], ['refresh', '/shared-ui'], ['open', '/shared-ui']]);
+});
+
+test('an older Core keeps the legacy browser without importing a missing named export', () => {
+  let mounted = 0, cleaned = 0;
+  const source = readFileSync(new URL('../webui/files-store.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace('export const store', 'const store');
+  const store = vm.runInNewContext(`${source}\nstore`, {
+    createStore: (_, value) => value, core: { store: {} },
+    legacyFiles: { mount() { mounted++; }, cleanup() { cleaned++; } }, console,
+  });
+  store.mount(); store.cleanup();
+  assert.equal(store.embedded, false);
+  assert.equal(mounted, 1); assert.equal(cleaned, 1);
+});
+
+test('composing the wrapper preserves live dismissal and legacy filter getters', () => {
+  const read = file => readFileSync(new URL(`../webui/${file}`, import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace(/export const /g, 'const ');
+  const source = `const legacyFiles = (() => { ${read('legacy-files.js')}; return legacyFiles; })();\n${read('files-store.js')}`;
+  for (const supported of [false, true]) {
+    const welcome = { hiddenSections: [], dismissSection(id) { this.hiddenSections.push(id); } };
+    const core = supported ? { createFileBrowserView: () => ({}) } : {};
+    const store = vm.runInNewContext(`${source}\nstore`, {
+      core, welcome, console, createStore: (_, value) => value,
+    });
+    assert.equal(store.hidden, false);
+    store.dismiss();
+    assert.equal(store.hidden, true);
+    welcome.hiddenSections = [];
+    assert.equal(store.hidden, false);
+    store.entries = [{ name: 'one.txt' }, { name: 'two.txt' }];
+    store.query = 'two';
+    assert.equal(store.filtered.length, 1);
+    assert.equal(store.filtered[0].name, 'two.txt');
+  }
 });

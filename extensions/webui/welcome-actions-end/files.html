@@ -10,12 +10,17 @@
           <header class="welcome-panel-header">
             <h2>Files</h2>
             <div class="welcome-panel-actions">
-              <button type="button" class="welcome-panel-icon-button" aria-label="Refresh welcome files" :disabled="$store.welcomeFiles.loading" @click="$store.welcomeFiles.load()"><x-icon name="refresh"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" aria-label="Refresh welcome files" :disabled="$store.welcomeFiles.embedded ? ($store.welcomeFiles.browser.isLoading || $store.welcomeFiles.browser.isRenaming || $store.welcomeFiles.browser.isBulkBusy) : $store.welcomeFiles.loading" @click="$store.welcomeFiles.refresh()"><x-icon name="refresh"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" aria-label="Open in Files" @click="$store.welcomeFiles.openFiles()"><x-icon name="open_in_new"></x-icon></button>
               <button type="button" class="welcome-panel-icon-button" x-show="typeof $store.welcomeStore.mountLayout === 'function'" :aria-label="$store.welcomeFiles.wide ? 'Use half-width files panel' : 'Expand files panel'" @click="$store.welcomeFiles.toggleWidth()"><x-icon :name="$store.welcomeFiles.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
               <button type="button" data-welcome-handle></button>
               <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeFiles.canDismiss" aria-label="Dismiss Files" @click="$store.welcomeFiles.dismiss()"><x-icon name="close"></x-icon></button>
             </div>
           </header>
+          <template x-if="$store.welcomeFiles.embedded">
+            <div class="wf-browser"><x-component path="modals/file-browser/file-browser.html" mode="embedded" owner="welcomeFilesBrowser"></x-component></div>
+          </template>
+          <template x-if="!$store.welcomeFiles.embedded"><div class="wf-legacy">
           <form class="wf-path" @submit.prevent="$store.welcomeFiles.load($store.welcomeFiles.pathInput)">
             <button type="button" class="welcome-panel-icon-button" aria-label="Parent folder" :disabled="!$store.welcomeFiles.parent || $store.welcomeFiles.loading" @click="$store.welcomeFiles.load($store.welcomeFiles.parent)"><x-icon name="arrow_upward"></x-icon></button>
             <input aria-label="Welcome files path" x-model="$store.welcomeFiles.pathInput" spellcheck="false" @keydown.escape="$store.welcomeFiles.pathInput = $store.welcomeFiles.path" />
@@ -35,7 +40,7 @@
             </template>
             <p class="wf-empty" x-show="!$store.welcomeFiles.filtered.length" x-text="$store.welcomeFiles.loading ? 'Loading files…' : ($store.welcomeFiles.query ? 'No matching files.' : 'This folder is empty.')"></p>
           </div>
-          <footer class="wf-footer"><span role="status" x-text="$store.welcomeFiles.loading ? 'Loading…' : `${$store.welcomeFiles.filtered.length} items`"></span><button type="button" @click="$store.welcomeFiles.openFiles()">Open Files<x-icon name="open_in_new"></x-icon></button></footer>
+          </div></template>
         </section>
       </template>
     </template>
@@ -43,8 +48,14 @@
   <style>
     .welcome-lower-grid .wf-card { grid-column: 1 / -1; }
     .welcome-lower-grid .wf-card [data-welcome-handle] { display: none; }
-    .wf-card { border: 1px solid color-mix(in srgb, var(--color-border) 66%, transparent); border-radius: 8px; background: var(--color-panel); padding: 1.35rem; display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
-    .wf-card .welcome-panel-header { margin: 0; }
+    .wf-card { border: 1px solid color-mix(in srgb, var(--color-border) 66%, transparent); border-radius: 8px; background: var(--color-panel); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .wf-card > .welcome-panel-header { margin: 0; padding: 1.35rem; }
+    .wf-browser { display: flex; flex: 1 0 28rem; height: 28rem; min-height: 0; min-width: 0; }
+    .wf-browser > x-component { display: flex; flex: 1; min-height: 0; min-width: 0; }
+    .wf-legacy { display: flex; flex-direction: column; gap: 0.85rem; padding: 0 1.35rem 1.35rem; }
+    .wf-browser .file-browser-root { flex: 1; min-height: 0; }
+    .wf-browser .file-browser-footer { margin: 0; }
+    @media (pointer: coarse) { .wf-browser .surface-workspace button.surface-control { min-width: 36px; min-height: 44px; max-height: 44px; } .wf-browser .path-navigator .path-input-shell .path-input { font-size: 16px; } }
     .wf-path, .wf-search { display: flex; align-items: center; gap: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background); min-width: 0; padding: 0.2rem 0.45rem; }
     .wf-path input, .wf-search input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.9rem; padding: 0.4rem 0.2rem; outline: none; }
     .wf-search input::-webkit-search-cancel-button, .wf-search input::-webkit-search-decoration { appearance: none; display: none; }
@@ -57,13 +68,10 @@
     .wf-row:hover, .wf-row:focus-visible { background: var(--color-background-hover); }
     .wf-row > x-icon { color: var(--color-primary); flex-shrink: 0; font-size: 1.2rem; }
     .wf-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
-    .wf-size, .wf-empty, .wf-footer { color: var(--color-text-muted); font-size: 0.8rem; }
+    .wf-size, .wf-empty { color: var(--color-text-muted); font-size: 0.8rem; }
     .wf-empty { text-align: center; padding: 2rem 0; }
-    .wf-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border-top: 1px solid var(--color-border); padding-top: 0.7rem; }
-    .wf-footer button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0; background: transparent; border: 0; color: var(--color-text); font: inherit; cursor: pointer; }
-    .wf-footer x-icon { font-size: 1rem; }
     @media (pointer: coarse) { .wf-card .welcome-panel-icon-button { min-width: 36px; min-height: 44px; } .wf-path input, .wf-search input { font-size: 16px; } }
-    @media (max-width: 480px) { .wf-card { padding: 1rem; } }
+    @media (max-width: 480px) { .wf-card > .welcome-panel-header { padding: 1rem; } .wf-legacy { padding: 0 1rem 1rem; } }
   </style>
 </body>
 </html>
